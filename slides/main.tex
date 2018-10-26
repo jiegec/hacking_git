@@ -2,6 +2,7 @@
 \documentclass{beamer}
 \usepackage{ctex}
 \usepackage{hyperref}
+\usepackage{soul}
 
 \title{Hacking Git - a Blocktree}
 \author{陈嘉杰}
@@ -209,11 +210,15 @@
 \begin{frame}{虐狗回顾}
     假如 NanoApe 虐狗了 99 年的时候，想看一下当年的自己？（好浪漫啊）
 
-    \$ git checkout -b nue-gou-1.0
+    \$ git checkout nue-gou-1.0
 
     \includegraphics[width=\linewidth]{2018-10-25-11-21-49.png}
 
     这样就可以回到当时的这个版本。实际上就是对某个 commit 进行了命名。
+
+    \$ git checkout master
+
+    恢复到原来的地方
 \end{frame}
 
 \begin{frame}{Git 协作}
@@ -274,5 +279,259 @@
     \$ git push origin master
 
     \includegraphics[width=\linewidth]{2018-10-25-11-59-01.png}
+
+    这时候就能在 GitLab 上看到我们刚才提交的更改
+
+    \includegraphics[width=\linewidth]{2018-10-25-12-02-10.png}
 \end{frame}
+
+\begin{frame}{多人同时在不同分支协作}
+    这次请出我们的两位主人公，muvseea 和 NanoApe 来给他们的虐狗日记添加一些内容。。。
+
+    NanoApe:
+
+    \$ git checkout -b nanoape
+
+    \$ ...
+
+    \$ git commit -m "Add credit"
+
+    \$ git push origin nanoape
+
+    muvseea:
+
+    \$ git checkout -b muvseea
+
+    \$ ...
+
+    \$ git commit -m "Add new log and edit an old one"
+
+    \$ git push origin muvseea
+\end{frame}
+
+\begin{frame}{协作！}
+    这时候可以看到，两人都对虐狗日记添加了自己的更改：
+
+    \includegraphics[width=\linewidth]{2018-10-25-13-09-01.png}
+\end{frame}
+
+\begin{frame}{合并？}
+    现在 NanoApe 和 muvseea 都对自己更新很满意了，想要把各自的更新合并回 master 分支里。那么，NanoApe 此时应该打开一个 Merge Request ：
+
+    \includegraphics[width=\linewidth]{2018-10-25-16-49-36.png}
+\end{frame}
+
+\begin{frame}{合并？（续）}
+    指定要从 nanoape 分支合并入 master 分支：
+
+    \includegraphics[width=\linewidth]{2018-10-25-16-50-58.png}
+
+    点击 Compare branches and continue ， 然后找到下面的 Submit merge request ，这就创建了一个 Merge Request ：
+
+    \includegraphics[width=\linewidth]{2018-10-25-16-52-33.png}
+\end{frame}
+
+\begin{frame}{合并！}
+    点击 Merge ，这时候看一下提交历史：
+
+    \includegraphics[width=\linewidth]{2018-10-25-16-54-11.png}
+
+    查看此时 master 分支上的 log.txt ，发现已经有了 NanoApe 进行的更改。
+
+    接下来，我们让 muvseea 也来一次同样的操作。
+\end{frame}
+
+\begin{frame}{冲突？}
+    我刻意创造了一个情况，就是 NanoApe 和 muvseea 对同一行内容进行了修改。此时在 muvseea 创建 Merge Requests 的时候，就需要首先 Resolve Conflict：
+
+    \includegraphics[width=\linewidth]{2018-10-25-16-56-59.png}
+\end{frame}
+
+\begin{frame}{别吵架了！}
+    点击 Resolve conflicts ，我们可以看到是哪里冲突了
+
+    \includegraphics[width=\linewidth]{2018-10-25-16-57-53.png}
+
+    上面是 muvseea 做的更改，下面是 NanoApe 做的更改。这里我们可以选择采用 muvseea 修改的版本，也可以选择采用 NanoApe 修改的版本，也可以选择 Edit inline 自己进行冲突的合并。
+
+    手动更改后，点击下面的 Commit 把冲突解决，然后点击 Merge 把修改合并到 master 分支。
+\end{frame}
+
+\begin{frame}{等等\ldots 发生了什么？}
+    \includegraphics[width=\linewidth]{2018-10-25-17-01-54.png}
+    现在，NanoApe 和 muvseea 做的更改都合并到了 master 分支中。双方的更改都可以看到。
+\end{frame}
+
+\begin{frame}{本地和 Gitlab 同步}
+    刚才我们的操作都在 Gitlab 上进行。如何在本地获取到我们在网页上合并的结果呢？
+
+    \$ git fetch
+
+    \includegraphics[width=\linewidth]{2018-10-26-19-25-28.png}
+\end{frame}
+
+\begin{frame}{本地和 Gitlab 同步}
+    此时的提交历史：
+
+    \includegraphics[width=\linewidth]{2018-10-26-19-27-09.png}
+    
+    注意，这里的 origin 代表我们之前添加的 remote ，即 Gitlab 。 这里的 origin/master 代表 Gitlab 上的 master 分支，它现在所在的位置和本地的 master 分支不同。
+\end{frame}
+
+\begin{frame}{本地和 Gitlab 同步（续）}
+    当然了，我们更常用的命令是：
+
+    \$ git pull origin master
+
+    它不仅会拉取当前上游的提交，而且会把本地的 master 分支更新到上游的版本。
+
+    不过，有时候，我们在本地更改了一些内容的时候，这个命令会报错：因为你进行了修改，不允许你直接更新到上游的版本。这时候我们可以这样：
+
+    \$ git stash
+
+    它会把当前的更改保存为一个临时的 commit 并且回退到之前的状态。之后当你想回到这个修改后的状态的时候，你可以：
+
+    \$ git stash apply
+
+    它会尝试把你的更改应用过来，不过并不会删掉这个临时的 commit 。你也可以选择
+    
+    \$ git stash pop
+
+    来应用并在成功的时候删除掉它。如果要删掉全部的临时 commit ，你也可以：
+
+    \$ git stash clear
+\end{frame}
+
+\begin{frame}{Recap}
+    我们想想，如果我们要合并两个人做的事情，应该怎么做？
+
+    举个栗子：
+
+    \begin{enumerate}
+        \item 有个图书馆，一开始没有书，经过了若干天后，有 3 本书
+        \item 第一个人看中了一本书，想，今晚我要这本书。
+        \item 第二个人想还一本书，想，今晚我把这本书还到这里。
+        \item 到了晚上，图书管理员和这两个人见面了。他看了下第一个人要借书，嗯，拿去。第二个人要还书，嗯，放下。这时候是 3 - 1 + 1 本书。
+        \item 他记下：书[0] A 借了；书[3] B 还了。
+    \end{enumerate}
+
+    这实际上是三个状态的合并：原来的 3 本书；第一个人取走书后的 2 本书；第二个人还了书的 4 本书。
+\end{frame}
+
+\begin{frame}{Conflict?}
+    那在什么情况下可能出现冲突呢？
+
+    还是这个栗子：
+
+    \begin{enumerate}
+        \item 有个图书馆，一开始没有书，经过了若干天后，有 3 本书
+        \item 第一个人看中了一本书，想，今晚我要这本书。
+        \item 第二个人也看中了这本书，想，今晚我要这本书。
+        \item 到了晚上，图书管理员和这两个人见面了。他看了下第一个人和第二个人要借的书一样，唔，行，那我借出去了，但是给谁，你们自己打一架决定。
+    \end{enumerate}
+
+    所以冲突的产生在于：不同人对同一个东西做了不同的更改。
+\end{frame}
+
+\begin{frame}{Git 的智能合并策略}
+    从上面这个栗子我们可以看到，一些时候我们是可以很好地合并两个人的更改的。
+
+    而这个更改，实际上就是，从两人的提交的最近的共同祖先到这两个提交的改变。
+
+    通过把只有一方改变的地方合并起来，把双方都改变的地方要求用户去解决，这就是三路合并。
+
+    \includegraphics[width=\linewidth]{2018-10-26-16-15-08.png}
+\end{frame}
+
+\begin{frame}{分支！？}
+    刚才还提到了一个东西：分支。
+
+    分支实际上就是一个一直跟随 commit 在变的标记。
+
+    比如 master 分支，它代表着项目代码当前最新的一个提交。而 nanoape 分支，则代表 NanoApe 对代码更改的最新的一个提交。
+
+    实际上在合并的时候可以直接指定和哪个提交进行合并。
+
+    在真实的项目中，我们往往会进一步细分： develop 表示正在活跃开发的版本， release 表示已经发布的最新版本，等等。
+\end{frame}
+
+\begin{frame}{分支的常见操作}
+    创建一个新分支，它指向的 commit 为当前 commit
+
+    \$ git branch [name]
+
+    切换到指定的分支
+
+    \$ git checkout [name]
+
+    创建并切换到分支
+
+    \$ git checkout -b [name]
+
+    显示所有的分支
+
+    \$ git branch
+
+    删除分支
+
+    \$ git branch -d [name]
+\end{frame}
+
+
+\begin{frame}{合并的骚操作？？}
+    不过，合并当然不仅有三路合并这一种方法。大家还有很多骚操作的，比如：
+
+    \begin{itemize}
+        \item 变\quad 基（rebase）。意思就是在新的上游上重放你的更改。当然了，一样会有冲突的问题，但是最后的提交历史会是一条直线。变基可以用的很复杂，我就不深入讲了，太黑科技了。
+        \includegraphics[width=\linewidth]{2018-10-26-16-23-42.png}
+        \item Squash ，就是把你的更改全部合并成一个提交，再合并进去。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{讲一些奇怪的操作}
+    如果你要魔改提交历史的话：
+
+    \$ git rebase [commit]
+
+    \includegraphics[width=\linewidth]{2018-10-26-20-03-30.png}
+
+    魔改完可以用 \$ git push -{}-force 强制提交到上游
+
+    注意，Gitlab 默认禁用了 master 分支的强制 push 。如非必要，请勿打开这个开关。
+\end{frame}
+
+\begin{frame}{如果你不小心把密码存在了仓库里并且传给了别人}
+    可以一条命令把一段历史中某个文件都删掉：
+
+    \$ git filter-branch -{}-tree-filter 'rm -f password.txt' HEAD
+
+    魔改完可以用 \$ git push -{}-force 强制提交到上游
+
+    然后还是建议赶紧改密码。
+
+    还可以批量把提交者的名字改了：
+
+    \$ git filter-branch -{}-commit-filter 'GIT\_AUTHOR\_NAME="Linus Torvalds" GIT\_AUTHOR\_EMAIL="torvalds@linux-foundation.org" git commit-tree "\$@"'
+
+    这样你就可以伪装成 Linus Torvalds 提交代码了。
+\end{frame}
+
+\begin{frame}{如何保证以我的名字提交的就是我提交的？}
+    需要大家配一下自己的 GPG Key ，过程比较复杂，这里就不详细讲了。
+
+    配好后，在提交的时候这么写：
+
+    \$ git commit -S -m [message]
+
+    然后在网页上就会这么显示：
+
+    \includegraphics[width=\linewidth]{2018-10-26-20-16-02.png}
+
+    这个基于的是 GPG Key 的信任模型，大家有兴趣的话可以了解一下。
+\end{frame}
+
+\begin{frame}{Block\st{chain}tree}
+
+\end{frame}
+
 \end{document}
