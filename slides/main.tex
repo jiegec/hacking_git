@@ -135,7 +135,7 @@
 
     \includegraphics[width=\linewidth]{2018-10-25-10-01-41.png}
 
-    它还支持很多写法，比如 HEAD^^..HEAD 表示从显示当前提交往前走两个，从它开始到当前提交的历史记录。
+    它还支持很多写法，比如 HEAD\^{}\^{}..HEAD 表示从显示当前提交往前走两个，从它开始到当前提交的历史记录。
 \end{frame}
 
 \begin{frame}{一个提交太单调，我们加多一个}
@@ -178,7 +178,7 @@
 \begin{frame}{啊，忘了一件事情（续续）}
     我看刚才的提交不爽，可不可以更改我上一次的提交？可以：
 
-    \$ git comment -a --amend -m "Add 128 days with muvseea"
+    \$ git commit -a -{}-amend -m "Add 128 days with muvseea"
 
     \$ git log
 
@@ -683,6 +683,18 @@
     实测， GitHub 和 GitLab 的绘制 Commit Graph 的工具会直接忽略这个。而 git log -{}-graph 检测到打环后直接就停在中间不输出了。
 
     不过， Gitk 就没有这么好运气了。它大概是没人维护了，于是就，无限循环了。
+\end{frame}
+
+\begin{frame}{喜闻乐见的 Bonus 环节}
+    \$ git clone git@git.tsinghua.edu.cn:chenjj17/hacking\_git.git
+
+    在仓库里，有一个名为 learn\_git.tar.gz 的文件。这样解压：
+
+    \$ tar xvf learn\_git.tar.gz
+
+    你会看到有一个名为 learn\_git 的目录解压出来。进去以后，这是一个 Git 仓库，里面藏了一个红包。
+
+    提示：回忆一下我刚才讲到的一些命令，我会把东西隐藏到哪儿呢？
 \end{frame}
 
 \begin{frame}{没有讲到的但可能会用到的}
