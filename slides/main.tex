@@ -83,7 +83,7 @@
 
     \$ git add .
 
-    来把当前目录和所有子目录里文件都加进来。执行以后，是这个效果：
+    来把当前目录和所有子目录里文件都加进来。小提示：你可以试试 git add -i 的效果。执行以后，是这个效果：
     
     \$ git status
 
@@ -134,6 +134,8 @@
     \$ git log -p
 
     \includegraphics[width=\linewidth]{2018-10-25-10-01-41.png}
+
+    它还支持很多写法，比如 HEAD^^..HEAD 表示从显示当前提交往前走两个，从它开始到当前提交的历史记录。
 \end{frame}
 
 \begin{frame}{一个提交太单调，我们加多一个}
@@ -488,6 +490,16 @@
     \end{itemize}
 \end{frame}
 
+\begin{frame}{热热热}
+    烫烫烫热热热rerere
+
+    git 有个不为人知的功能，叫 Rerere （Reuse recorded resolution）。它会记录你解决冲突的历史记录，然后当你下次遇到同样的冲突的时候，它会自动帮你解决。
+
+    \$ git config -{}-global rerere.enabled true
+
+    即可开启。免费的人工智能！
+\end{frame}
+
 \begin{frame}{讲一些奇怪的操作}
     如果你要魔改提交历史的话：
 
@@ -514,6 +526,12 @@
     \$ git filter-branch -{}-commit-filter 'GIT\_AUTHOR\_NAME="Linus Torvalds" GIT\_AUTHOR\_EMAIL="torvalds@linux-foundation.org" git commit-tree "\$@"'
 
     这样你就可以伪装成 Linus Torvalds 提交代码了。
+
+    当然了，如果不是密码这么敏感的信息，你可以用
+
+    \$ git revert [commit]
+
+    生成一个效果和某个 commit 抵消的 commit。
 \end{frame}
 
 \begin{frame}{如何保证以我的名字提交的就是我提交的？}
@@ -530,8 +548,154 @@
     这个基于的是 GPG Key 的信任模型，大家有兴趣的话可以了解一下。
 \end{frame}
 
-\begin{frame}{Block\st{chain}tree}
+\begin{frame}{嘿，接锅嘞}
+    突然有一天，代码出了 BUG ，发现是一个很愚蠢的地方写错了。你想知道这行代码是谁改的，然后劈头盖脸骂ta一顿。怎么看？
 
+    \$ git blame [file]
+
+    \includegraphics[width=\linewidth]{2018-10-27-00-12-08.png}
+
+    可以看到每一行最后都是谁改的，什么时候改的，这些内容。
+\end{frame}
+
+\begin{frame}{嘿，接锅锅嘞}
+    再设想一种情况：你看了看代码，不知道哪里有问题，但你知道啥时候肯定是好的。那我们自然会想，能不能二分呢？可以：
+
+    \$ git bisect start
+
+    \$ git bisect bad
+
+    这样，标记了当前的 commit 是坏的。然后，再标记一个没有问题的 commit ：
+
+    \$ git bisect good [commit]
+
+    之后，它会自动选择好和坏中央的 commit ，你测试一下代码是否工作然后根据好坏继续执行：
+
+    \$ git bisect good/bad
+
+    最后就可以定位到出错的地方了。
+\end{frame}
+
+\begin{frame}{Block\st{chain}tree}
+    Git 里每个 commit 都有一个很长的十六进制值：它目前是这些内容的 SHA-1 （以后会换哈希算法）
+
+    \begin{itemize}
+        \item 提交的信息
+        \item 提交人
+        \item 提交日期
+        \item 作者
+        \item 编辑日期
+        \item 整个目录树结构的哈希值
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{举个栗子}
+    \$ git rev-parse HEAD | xargs git cat-file -p
+
+    \includegraphics[width=\linewidth]{2018-10-26-21-50-58.png}
+\end{frame}
+
+\begin{frame}{目录结构是个什么？}
+    \$ git cat-file -p df13ecd252f5c53fbfaefeeaf37dcabe639b09b0 
+
+    \includegraphics[width=\linewidth]{2018-10-26-21-54-08.png}
+
+    \$ git cat-file -p beea1aa47abadc02495171084f5afdc4f4eb4ade
+
+    \includegraphics[width=\linewidth]{2018-10-26-21-55-01.png}
+\end{frame}
+
+\begin{frame}{看个图}
+    \includegraphics[width=\linewidth]{2018-10-26-21-48-43.png}
+\end{frame}
+
+\begin{frame}{如何手动创建一个 commit ?}
+    把文件保存到 Git 中，得到它的哈希值
+
+    \$ git hash-object -w [file]
+
+    把该文件添加到暂存区
+
+    \$ git update-index -{}-add -{}-cacheinfo 100644 [file\_hash] [file]
+
+    生成当前目录树的哈希
+
+    \$ git write-tree
+
+    生成提交的哈希
+
+    \$ echo 'commit message' | git commit-tree [tree\_hash] -p [parent\_hash]
+
+    把当前的 master 分支指向刚刚创建的提交
+
+    \$ git update-ref refs/heads/master [commit\_hash]
+\end{frame}
+
+\begin{frame}{查看 HEAD 的历史}
+    我们知道 HEAD 是一个特殊的“指针”，一直指向目前的提交。
+
+    而我们常常会不小心把某个 commit 弄丢。也就是说，它不在现在的任何一个分支上。这咋办呢？
+
+    \$ git reflog
+
+    \includegraphics[width=\linewidth]{2018-10-26-23-23-26.png}
+
+    它会记录你的 HEAD 变更历史。这样，即便你不小心弄丢了什么，还有很大机会可以找回来。
+
+    当然了，你也可以用
+
+    \$ git fsck -{}-full
+
+    它会找到所有的悬孤提交（dangling commit），也是一样的效果。
+\end{frame}
+
+\begin{frame}{什么时候孤儿 commit 历史会丢呢？}
+    有个命令，会在你的图上跑个搜索，标记上各个分支可以连接到的 commit ，然后把没有标记到的文件删除。
+
+    \$ git gc
+
+    也就是垃圾回收。同时，为了节省空间，它会把很多个小文件打包成一个大的压缩包，并把一些文件用 diff 的形式保存下来。这在很大的仓库里会非常有用。
+\end{frame}
+
+\begin{frame}{Git 的本质是。。。？}
+    复读机（误
+
+    区块树+Key-Value存储
+
+    每个数据的 Key 是它本身的 SHA-1 哈希值，Value 就是文件本身的内容。
+
+    区块树：每个提交记录了它的父提交的 SHA-1 值。在 SHA-1 不能任意制造碰撞前，可以保证这是一棵树，并且确定了一个 commit 的 SHA-1 几乎无法伪造一个假的历史。
+\end{frame}
+
+\begin{frame}{最新研究：Git 可以打环辣}
+    \includegraphics[width=\linewidth]{2018-10-26-23-52-53.png}
+\end{frame}
+
+\begin{frame}{dbq 假新闻}
+    采用了一个命令：
+
+    \$ git replace
+
+    它能做到，把一个 commit 替换成另一个 commit 。一个用途是可以拆分历史后再合并两个历史。
+
+    实际上并没有修改这颗区块树，只是人为假装修改了一些边而已。
+
+    实测， GitHub 和 GitLab 的绘制 Commit Graph 的工具会直接忽略这个。而 git log -{}-graph 检测到打环后直接就停在中间不输出了。
+
+    不过， Gitk 就没有这么好运气了。它大概是没人维护了，于是就，无限循环了。
+\end{frame}
+
+\begin{frame}{没有讲到的但可能会用到的}
+    \begin{itemize}
+        \item diff 和 apply
+        \item textconv 过滤器
+        \item ident 和 filter
+        \item hooks 和 CI
+        \item svn 集成
+        \item 如何用邮件和别人协作
+    \end{itemize}
+
+    扩展阅读：墙裂推荐 《Pro Git 2》 网上有开源版本可以自己构建、阅读。
 \end{frame}
 
 \end{document}
